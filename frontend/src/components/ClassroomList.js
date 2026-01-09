@@ -15,7 +15,7 @@ const ClassroomList = () => {
             setLoading(true);
             console.log('Fetching classrooms...');
             
-            const response = await axios.get('http://localhost:5000/api/classrooms');
+            const response = await axios.get('https://shivanksharmaofficial-exam-seat-pla.vercel.app/');
             console.log('API Response:', response.data);
             
             // Check if response has data property
