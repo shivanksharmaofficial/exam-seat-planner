@@ -13,7 +13,7 @@ const AllocateExam = () => {
 
     const fetchTotalCapacity = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/classrooms');
+            const response = await axios.get('https://shivanksharmaofficial-exam-seat-pla.vercel.app/');
             const total = response.data.reduce((sum, room) => sum + room.capacity, 0);
             setTotalCapacity(total);
         } catch (err) {
