@@ -26,7 +26,7 @@ const AddClassroom = () => {
         setError('');
         
         try {
-            const response = await axios.post('http://localhost:5000/api/classrooms', {
+            const response = await axios.post('https://shivanksharmaofficial-exam-seat-pla.vercel.app/', {
                 ...formData,
                 capacity: parseInt(formData.capacity),
                 floorNo: parseInt(formData.floorNo)
