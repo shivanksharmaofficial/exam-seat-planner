@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+
 const AddClassroom = () => {
     const [formData, setFormData] = useState({
         roomId: '',
@@ -26,19 +28,13 @@ const AddClassroom = () => {
         setError('');
         
         try {
-            const response = await axios.post('https://shivanksharmaofficial-exam-seat-pla.vercel.app/', {
-                ...formData,
-                capacity: parseInt(formData.capacity),
-                floorNo: parseInt(formData.floorNo)
-            });
             
-            setMessage(`Classroom ${response.data.roomId} added successfully!`);
-            setFormData({
-                roomId: '',
-                capacity: '',
-                floorNo: '1',
-                nearWashroom: false
-            });
+const response = await axios.post(`${API_URL}/api/classrooms`, {
+    roomId: roomIdUpper,
+    capacity: parseInt(formData.capacity),
+    floorNo: parseInt(formData.floorNo),
+    nearWashroom: formData.nearWashroom
+});
         } catch (err) {
             setError(err.response?.data?.error || 'Error adding classroom');
         }
