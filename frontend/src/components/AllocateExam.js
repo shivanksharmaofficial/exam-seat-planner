@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+
 const AllocateExam = () => {
     const [totalStudents, setTotalStudents] = useState('');
     const [allocation, setAllocation] = useState(null);
@@ -13,7 +15,7 @@ const AllocateExam = () => {
 
     const fetchTotalCapacity = async () => {
         try {
-            const response = await axios.get('https://shivanksharmaofficial-exam-seat-pla.vercel.app/');
+            const response = await axios.get(`${API_URL}/api/classrooms/allocate`);
             const total = response.data.reduce((sum, room) => sum + room.capacity, 0);
             setTotalCapacity(total);
         } catch (err) {
@@ -32,9 +34,10 @@ const AllocateExam = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/classrooms/allocate', {
-                totalStudents: parseInt(totalStudents)
-            });
+            
+const response = await axios.post(`${API_URL}/api/classrooms/allocate`, {
+    totalStudents: parseInt(totalStudents)
+});
             
             setAllocation(response.data);
         } catch (err) {
