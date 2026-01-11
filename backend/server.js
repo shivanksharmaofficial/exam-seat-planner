@@ -11,34 +11,59 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/seat_planner', {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/seatplanner';
+
+mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.log('❌ MongoDB error:', err));
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    console.log('⚠️  Continuing without database...');
+});
 
 // Classroom Model
-const Classroom = mongoose.model('Classroom', new mongoose.Schema({
-    roomId: { type: String, required: true, unique: true },
-    capacity: { type: Number, required: true, min: 1 },
-    floorNo: { type: Number, required: true, min: 1 },
-    nearWashroom: { type: Boolean, default: false }
-}, { timestamps: true }));
+const classroomSchema = new mongoose.Schema({
+    roomId: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        uppercase: true
+    },
+    capacity: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+    floorNo: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+    nearWashroom: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    timestamps: true
+});
+
+const Classroom = mongoose.model('Classroom', classroomSchema);
 
 // API Routes
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'Exam Seat Planner API is working!' });
+});
 
 // Add Classroom
 app.post('/api/classrooms', async (req, res) => {
     try {
         const { roomId, capacity, floorNo, nearWashroom } = req.body;
         
-        // Check if roomId already exists
-        const existing = await Classroom.findOne({ roomId: roomId.toUpperCase() });
-        if (existing) {
-            return res.status(400).json({ 
-                error: `Room ID "${roomId}" already exists. Please use a different ID.` 
-            });
+        if (!roomId || !capacity || !floorNo) {
+            return res.status(400).json({ error: 'Missing required fields' });
         }
         
         const classroom = new Classroom({
@@ -49,13 +74,18 @@ app.post('/api/classrooms', async (req, res) => {
         });
         
         await classroom.save();
+        
         res.status(201).json({ 
             success: true, 
             message: 'Classroom added successfully',
             classroom 
         });
     } catch (error) {
-        console.error('Error:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                error: `Room ID "${req.body.roomId}" already exists` 
+            });
+        }
         res.status(500).json({ error: error.message });
     }
 });
@@ -88,58 +118,41 @@ app.post('/api/classrooms/allocate', async (req, res) => {
             capacity: -1 
         });
         
-        let remainingStudents = parseInt(totalStudents);
-        const allocatedClassrooms = [];
-        let totalCapacity = 0;
+        let remaining = parseInt(totalStudents);
+        const allocated = [];
+        const totalCapacity = classrooms.reduce((sum, room) => sum + room.capacity, 0);
         
-        // Calculate total capacity
-        classrooms.forEach(room => {
-            totalCapacity += room.capacity;
-        });
-        
-        // Check if enough capacity exists
-        if (totalCapacity < remainingStudents) {
+        if (totalCapacity < remaining) {
             return res.status(400).json({ 
-                success: false,
                 error: 'Not enough seats available',
-                totalCapacity,
-                required: remainingStudents
+                totalCapacity 
             });
         }
         
-        // Greedy allocation
         for (const room of classrooms) {
-            if (remainingStudents <= 0) break;
-            
-            allocatedClassrooms.push(room);
-            remainingStudents -= room.capacity;
+            if (remaining <= 0) break;
+            allocated.push(room);
+            remaining -= room.capacity;
         }
         
         res.json({
             success: true,
-            allocatedClassrooms,
-            totalStudentsAllocated: totalStudents - remainingStudents,
-            roomsUsed: allocatedClassrooms.length,
-            totalCapacity: totalCapacity,
-            message: `Allocated ${allocatedClassrooms.length} room(s) for ${totalStudents} students`
+            allocatedClassrooms: allocated,
+            totalStudentsAllocated: totalStudents - remaining,
+            roomsUsed: allocated.length,
+            message: `Allocated ${allocated.length} room(s)`
         });
     } catch (error) {
-        console.error('Error allocating seats:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Test route
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API is working!' });
-});
-
-// Serve static files in production
+// Serve frontend build in production
 if (process.env.NODE_ENV === 'production') {
-    // Serve frontend build files
+    // Set static folder
     app.use(express.static(path.join(__dirname, '../frontend/build')));
     
-    // Handle React routing, return all requests to React app
+    // Handle React routing
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
     });
@@ -148,5 +161,5 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
