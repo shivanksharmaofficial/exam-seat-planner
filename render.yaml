@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: exam-seat-planner
+    env: node
+    buildCommand: |
+      cd frontend
+      npm install
+      npm run build
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://shivanksharmaofficial:shivank123@cluster0.pbtpc8q.mongodb.net/seatplanner
+      - key: PORT
+        value: 10000
