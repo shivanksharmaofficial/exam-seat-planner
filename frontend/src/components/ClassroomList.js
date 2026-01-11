@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+
 const ClassroomList = () => {
     const [classrooms, setClassrooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ const ClassroomList = () => {
             setLoading(true);
             console.log('Fetching classrooms...');
             
-            const response = await axios.get('https://shivanksharmaofficial-exam-seat-pla.vercel.app/');
+            const response = await axios.get(`${API_URL}/api/classrooms`);
             console.log('API Response:', response.data);
             
             // Check if response has data property
